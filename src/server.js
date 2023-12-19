@@ -13,10 +13,23 @@ app.get("/*", (_, res) => res.redirect("/"));
 const httpServer = http.createServer(app);
 const wsServer = SocketIO(httpServer);
 
+function countRoom(roomName) {
+  return wsServer.sockets.adapter.rooms.get(roomName)?.size;
+}
+
 wsServer.on("connection", (socket) => {
-  socket.on("join_room", (roomName) => {
-    socket.join(roomName);
-    socket.to(roomName).emit("welcome");
+  socket.onAny((event) => {
+    // console.log(wsServer.sockets.adapter);
+    // console.log(`got ${event} event`);
+  });
+  socket.on("join_room", (roomName, block) => {
+    console.log(countRoom(roomName));
+    if (countRoom(roomName) > 1) {
+      block();
+    } else {
+      socket.join(roomName);
+      socket.to(roomName).emit("welcome");
+    }
   });
   socket.on("offer", (offer, roomName) => {
     socket.to(roomName).emit("offer", offer);
